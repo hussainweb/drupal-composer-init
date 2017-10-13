@@ -85,6 +85,7 @@ EOT
                 'drupal-composer-helper' => [
                     'web-prefix' => 'web',
                 ],
+                'enable-patching' => true,
             ];
             $options['prefer-stable'] = true;
             $options['conflict'] = [
