@@ -85,9 +85,8 @@ EOT
                 'drupal-composer-helper' => [
                     'web-prefix' => 'web',
                 ],
-                'minimum-stability' => 'dev',
-                'prefer-stable' => true,
             ];
+            $options['prefer-stable'] = true;
             $options['conflict'] = [
                 'drupal/drupal' => '*',
             ];
