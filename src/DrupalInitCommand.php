@@ -3,9 +3,11 @@
 namespace Hussainweb\DrupalComposerInit;
 
 use Composer\Command\InitCommand;
+use Composer\DependencyResolver\Pool;
 use Composer\Factory;
 use Composer\Json\JsonFile;
 use Composer\Package\BasePackage;
+use Composer\Package\Version\VersionSelector;
 use Composer\Repository\CompositeRepository;
 use Composer\Repository\PlatformRepository;
 use Composer\Repository\RepositoryFactory;
@@ -31,6 +33,7 @@ class DrupalInitCommand extends InitCommand
                 new InputOption('homepage', null, InputOption::VALUE_REQUIRED, 'Homepage of package'),
                 new InputOption('require', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Package to require with a version constraint, e.g. foo/bar:1.0.0 or foo/bar=1.0.0 or "foo/bar 1.0.0"'),
                 new InputOption('require-dev', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Package to require for development with a version constraint, e.g. foo/bar:1.0.0 or foo/bar=1.0.0 or "foo/bar 1.0.0"'),
+                new InputOption('core', 'c', InputOption::VALUE_REQUIRED, 'Drupal Core or distribution with a version constraint, e.g. drupal/core or acquia/lightning~2.1 or "drupal/core 8.4.0"', 'drupal/core:^8.4'),
                 new InputOption('stability', 's', InputOption::VALUE_REQUIRED, 'Minimum stability (empty or one of: '.implode(', ', array_keys(BasePackage::$stabilities)).')'),
                 new InputOption('license', 'l', InputOption::VALUE_REQUIRED, 'License of package'),
                 new InputOption('repository', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add custom repositories, either by URL or using JSON arrays'),
@@ -56,7 +59,7 @@ EOT
         $options['require'] = array_merge([
             'cweagans/composer-patches ^1.6.0',
             'hussainweb/drupal-composer-helper ^1.0',
-            'drupal/core ^8.4',
+            $input->getOption('core'),
             'drupal/console ^1.0.1',
             'drush/drush ~8.0|^9.0',
         ], $options['require']);
@@ -260,6 +263,8 @@ EOT
         );
         $input->setOption('license', $license);
 
+        $input->setOption('core', $this->getCore($input));
+
         $io->writeError(['', 'Define your dependencies.', '']);
 
         $question = 'Would you like to define your dependencies (require) now [<comment>yes</comment>]? ';
@@ -277,5 +282,43 @@ EOT
             $devRequirements = $this->determineRequirements($input, $output, $requireDev);
         }
         $input->setOption('require-dev', $devRequirements);
+    }
+
+    protected function getCore(InputInterface $input)
+    {
+        $io = $this->getIO();
+
+        $core = $input->getOption('core') ?: false;
+        $core_version = $this->normalizeRequirements((array) $core);
+        $core_version = reset($core_version);
+        $core_package = $core_version['name'];
+
+        $core_package = $io->askAndValidate(
+            'Drupal core or distribution [<comment>'.$core_package.'</comment>]: ',
+            function ($value) {
+                $packages = $this->findPackages($value);
+                foreach ($packages as $package) {
+                    if ($package['name'] == $value) {
+                        return $value;
+                    }
+                }
+                throw new \Exception('Package not found');
+            },
+            null,
+            $core_package
+        );
+
+        $pool = new Pool($input->getOption('stability'));
+        $pool->addRepository($this->getRepos());
+        $versionSelector = new VersionSelector($pool);
+        $package = $versionSelector->findBestCandidate($core_package);
+        $core_version = $package ? $versionSelector->findRecommendedRequireVersion($package) : '';
+
+        $core_version = $io->ask(
+            'Version for '.$core_package.' [<comment>'.$core_version.'</comment>]: ',
+            $core_version
+        );
+
+        return $core_package.' '.$core_version;
     }
 }
