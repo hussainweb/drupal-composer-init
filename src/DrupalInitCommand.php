@@ -125,6 +125,11 @@ EOT
             'url' => 'https://packages.drupal.org/8',
         ]);
 
+        // Add our Drupal packagist URL to the repositories so that it appears
+        // in the composer.json file.
+        $repositories[] = 'https://packages.drupal.org/8';
+        $input->setOption('repository', $repositories);
+
         $repos[] = RepositoryFactory::createRepo($io, $config, [
             'type' => 'composer',
             'url' => 'https://packagist.org',
