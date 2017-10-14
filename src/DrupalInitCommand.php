@@ -37,6 +37,7 @@ class DrupalInitCommand extends InitCommand
                 new InputOption('stability', 's', InputOption::VALUE_REQUIRED, 'Minimum stability (empty or one of: '.implode(', ', array_keys(BasePackage::$stabilities)).')'),
                 new InputOption('license', 'l', InputOption::VALUE_REQUIRED, 'License of package'),
                 new InputOption('repository', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add custom repositories, either by URL or using JSON arrays'),
+                new InputOption('web-dir', 'w', InputOption::VALUE_REQUIRED, 'Specify the docroot (defaults to web)', 'web'),
 //                new InputOption('extensions', 'm', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Extensions (such as modules or themes) to require with a version constraint, e.g. panels:^4.0'),
 //                new InputOption('extensions-dev', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Extensions (such as modules or themes) to require for development with a version constraint, e.g. panels:^4.0'),
             ])
@@ -86,7 +87,7 @@ EOT
             $options = $file->read();
             $options['extra'] = [
                 'drupal-composer-helper' => [
-                    'web-prefix' => 'web',
+                    'web-prefix' => $input->getOption('web-dir'),
                 ],
                 'enable-patching' => true,
             ];
@@ -262,6 +263,13 @@ EOT
             $license
         );
         $input->setOption('license', $license);
+
+        $web_dir = $input->getOption('web-dir') ?: false;
+        $web_dir = $io->ask(
+            'Public web directory [<comment>'.$web_dir.'</comment>]: ',
+            $web_dir
+        );
+        $input->setOption('web-dir', $web_dir);
 
         $input->setOption('core', $this->getCore($input));
 
