@@ -202,7 +202,7 @@ EOT
 
         $io->writeError([
             '',
-            $formatter->formatBlock('Welcome to the Drupal Composer config generator', 'bg=cyan;fg=white', true),
+            $formatter->formatBlock('Welcome to the Drupal Composer config generator', 'bg=blue;fg=white', true),
             '',
         ]);
 
