@@ -38,6 +38,7 @@ class DrupalInitCommand extends InitCommand
                 new InputOption('license', 'l', InputOption::VALUE_REQUIRED, 'License of package'),
                 new InputOption('repository', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add custom repositories, either by URL or using JSON arrays'),
                 new InputOption('web-dir', 'w', InputOption::VALUE_REQUIRED, 'Specify the docroot (defaults to web)', 'web'),
+                new InputOption('drupal-7', null, InputOption::VALUE_NONE, 'Use Drupal 7 packagist instead of Drupal 8'),
 //                new InputOption('extensions', 'm', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Extensions (such as modules or themes) to require with a version constraint, e.g. panels:^4.0'),
 //                new InputOption('extensions-dev', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Extensions (such as modules or themes) to require for development with a version constraint, e.g. panels:^4.0'),
             ])
@@ -52,16 +53,39 @@ EOT
         // @codingStandardsIgnoreEnd
     }
 
+    protected function isDrupal7(InputInterface $input)
+    {
+        return $input->getOption('drupal-7');
+    }
+
     protected function getExtraRequires(InputInterface $input)
     {
-        $require = [
-            'cweagans/composer-patches ^1.6.0',
-            'hussainweb/drupal-composer-helper ^1.0',
-            $input->getOption('core'),
-            'drupal/console ^1.0.1',
-            'drush/drush ~8.0|^9.0',
+        $requires = [
+            'd7' => [
+                'php >=5.2.5',
+                'ext-gd *',
+                'ext-xml *',
+                'ext-json *',
+                'ext-openssl *',
+                'ext-curl *',
+                'ext-pdo *',
+                'ext-pdo_mysql *',
+                'cweagans/composer-patches ^1.6.0',
+                'hussainweb/drupal-composer-helper ^1.0-beta3',
+                'drupal-composer/preserve-paths ^0.1',
+                $input->getOption('core'),
+                'drupal/composer_autoloader ^1.0',
+                'drush/drush ~8.0',
+            ],
+            'd8' => [
+                'cweagans/composer-patches ^1.6.0',
+                'hussainweb/drupal-composer-helper ^1.0',
+                $input->getOption('core'),
+                'drupal/console ^1.0.1',
+                'drush/drush ~8.0|^9.0',
+            ],
         ];
-        return $require;
+        return $this->isDrupal7($input) ? $requires['d7'] : $requires['d8'];
     }
 
     protected function getExtraRequireDevs(InputInterface $input)
@@ -75,7 +99,7 @@ EOT
             'phpunit/phpunit >=4.8.28 <5',
             'symfony/css-selector ~2.8',
         ];
-        return $require_dev;
+        return $this->isDrupal7($input) ? [] : $require_dev;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -93,12 +117,14 @@ EOT
         $status = parent::execute($input, $output);
 
         if (!$status) {
+            $web_prefix = $input->getOption('web-dir');
+
             // Write extra to composer.json file.
             $file = new JsonFile(Factory::getComposerFile());
             $options = $file->read();
             $options['extra'] = [
                 'drupal-composer-helper' => [
-                    'web-prefix' => $input->getOption('web-dir'),
+                    'web-prefix' => $web_prefix,
                 ],
                 'enable-patching' => true,
             ];
@@ -110,6 +136,21 @@ EOT
                 'sort-packages' => true,
                 'optimize-autoloader' => true,
             ];
+
+            if ($this->isDrupal7($input)) {
+                $options['conflict'] = [
+                    'drupal/core' => '8.*',
+                ];
+                $options['extra']['drupal-composer-helper']['set-d7-paths'] = true;
+                $options['extra']['preserve-paths'] = [
+                    $web_prefix . '/sites/all/libraries',
+                    $web_prefix . '/sites/all/modules/custom',
+                    $web_prefix . '/sites/all/modules/features',
+                    $web_prefix . '/sites/all/themes/custom',
+                    $web_prefix . '/sites/all/translations',
+                    $web_prefix . '/sites/default',
+                ];
+            }
 
             $file->write($options);
         }
@@ -131,15 +172,15 @@ EOT
             }
         }
 
-        // @todo: Implement support for Drupal 7 packagist repos.
+        $packagist_url = 'https://packages.drupal.org/' . ($this->isDrupal7($input) ? '7' : '8');
         $repos[] = RepositoryFactory::createRepo($io, $config, [
             'type' => 'composer',
-            'url' => 'https://packages.drupal.org/8',
+            'url' => $packagist_url,
         ]);
 
         // Add our Drupal packagist URL to the repositories so that it appears
         // in the composer.json file.
-        $repositories[] = 'https://packages.drupal.org/8';
+        $repositories[] = $packagist_url;
         $input->setOption('repository', $repositories);
 
         $repos[] = RepositoryFactory::createRepo($io, $config, [
@@ -312,7 +353,11 @@ EOT
     {
         $io = $this->getIO();
 
-        $name_version_pair = $this->normalizeRequirements((array) $input->getOption('core'));
+        $core = $input->getOption('core');
+        if ($this->isDrupal7($input) && $core == 'drupal/core') {
+            $core = 'drupal/drupal';
+        }
+        $name_version_pair = $this->normalizeRequirements((array) $core);
         $core_package = $name_version_pair[0]['name'];
 
         $core_package = $io->askAndValidate(
