@@ -33,7 +33,7 @@ class DrupalInitCommand extends InitCommand
                 new InputOption('homepage', null, InputOption::VALUE_REQUIRED, 'Homepage of package'),
                 new InputOption('require', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Package to require with a version constraint, e.g. foo/bar:1.0.0 or foo/bar=1.0.0 or "foo/bar 1.0.0"'),
                 new InputOption('require-dev', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Package to require for development with a version constraint, e.g. foo/bar:1.0.0 or foo/bar=1.0.0 or "foo/bar 1.0.0"'),
-                new InputOption('core', 'c', InputOption::VALUE_REQUIRED, 'Drupal Core or distribution with a version constraint, e.g. drupal/core or acquia/lightning~2.1 or "drupal/core 8.4.0"', 'drupal/core:^8.4'),
+                new InputOption('core', 'c', InputOption::VALUE_REQUIRED, 'Drupal Core or distribution, e.g. drupal/core or acquia/lightning', 'drupal/core'),
                 new InputOption('stability', 's', InputOption::VALUE_REQUIRED, 'Minimum stability (empty or one of: '.implode(', ', array_keys(BasePackage::$stabilities)).')'),
                 new InputOption('license', 'l', InputOption::VALUE_REQUIRED, 'License of package'),
                 new InputOption('repository', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add custom repositories, either by URL or using JSON arrays'),
@@ -56,7 +56,6 @@ EOT
     {
         $options = $input->getOptions();
 
-        // @todo: Provide an option to select a distribution.
         $options['require'] = array_merge([
             'cweagans/composer-patches ^1.6.0',
             'hussainweb/drupal-composer-helper ^1.0',
@@ -296,10 +295,8 @@ EOT
     {
         $io = $this->getIO();
 
-        $core = $input->getOption('core') ?: false;
-        $core_version = $this->normalizeRequirements((array) $core);
-        $core_version = reset($core_version);
-        $core_package = $core_version['name'];
+        $name_version_pair = $this->normalizeRequirements((array) $input->getOption('core'));
+        $core_package = $name_version_pair[0]['name'];
 
         $core_package = $io->askAndValidate(
             'Drupal core or distribution [<comment>'.$core_package.'</comment>]: ',
