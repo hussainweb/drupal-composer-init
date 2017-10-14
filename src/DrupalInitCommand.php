@@ -52,19 +52,21 @@ EOT
         // @codingStandardsIgnoreEnd
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function getExtraRequires(InputInterface $input)
     {
-        $options = $input->getOptions();
-
-        $options['require'] = array_merge([
+        $require = [
             'cweagans/composer-patches ^1.6.0',
             'hussainweb/drupal-composer-helper ^1.0',
             $input->getOption('core'),
             'drupal/console ^1.0.1',
             'drush/drush ~8.0|^9.0',
-        ], $options['require']);
+        ];
+        return $require;
+    }
 
-        $options['require-dev'] = array_merge([
+    protected function getExtraRequireDevs(InputInterface $input)
+    {
+        $require_dev = [
             'behat/mink ~1.7',
             'behat/mink-goutte-driver ~1.2',
             'jcalderonzumba/gastonjs ~1.0.2',
@@ -72,7 +74,17 @@ EOT
             'mikey179/vfsstream ~1.2',
             'phpunit/phpunit >=4.8.28 <5',
             'symfony/css-selector ~2.8',
-        ], $options['require-dev']);
+        ];
+        return $require_dev;
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $options = $input->getOptions();
+
+        $options['require'] = array_merge($this->getExtraRequires($input), $options['require']);
+
+        $options['require-dev'] = array_merge($this->getExtraRequireDevs($input), $options['require-dev']);
 
         $input->setOption('require', $options['require']);
         $input->setOption('require-dev', $options['require-dev']);
