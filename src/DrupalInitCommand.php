@@ -143,11 +143,13 @@ EOT
             ];
 
             if ($this->isDrupal7($input)) {
+                $extra = &$options['extra'];
                 $options['conflict'] = [
                     'drupal/core' => '8.*',
                 ];
-                $options['extra']['drupal-composer-helper']['set-d7-paths'] = true;
-                $options['extra']['preserve-paths'] = [
+
+                $extra['drupal-composer-helper']['set-d7-paths'] = true;
+                $extra['preserve-paths'] = [
                     $web_prefix . '/sites/all/libraries',
                     $web_prefix . '/sites/all/modules/custom',
                     $web_prefix . '/sites/all/modules/features',
@@ -155,8 +157,8 @@ EOT
                     $web_prefix . '/sites/all/translations',
                     $web_prefix . '/sites/default',
                 ];
-                $options['extra']['installer-paths'][$web_prefix . '/'] = $options['extra']['installer-paths'][$web_prefix . '/core'];
-                unset($options['extra']['installer-paths'][$web_prefix . '/core']);
+                $extra['installer-paths'][$web_prefix . '/'] = $extra['installer-paths'][$web_prefix . '/core'];
+                unset($extra['installer-paths'][$web_prefix . '/core']);
             }
 
             $file->write($options);
