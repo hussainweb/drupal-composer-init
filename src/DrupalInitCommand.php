@@ -81,8 +81,8 @@ EOT
                 'cweagans/composer-patches ^1.6.0',
                 'hussainweb/drupal-composer-helper ^1.0',
                 $input->getOption('core'),
-                'drupal/console ^1.0.1',
-                'drush/drush ~8.0|^9.0',
+                'drupal/console ^1.0.2',
+                'drush/drush ~8.0|^9.0.0-beta8',
             ],
         ];
         return $this->isDrupal7($input) ? $requires['d7'] : $requires['d8'];
