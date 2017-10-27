@@ -127,6 +127,11 @@ EOT
                     'web-prefix' => $web_prefix,
                 ],
                 'enable-patching' => true,
+                'installer-paths' => [
+                    $web_prefix . '/core' => [
+                        'type:drupal-core',
+                    ],
+                ],
             ];
             $options['prefer-stable'] = true;
             $options['conflict'] = [
@@ -150,6 +155,8 @@ EOT
                     $web_prefix . '/sites/all/translations',
                     $web_prefix . '/sites/default',
                 ];
+                $options['extra']['installer-paths'][$web_prefix . '/'] = $options['extra']['installer-paths'][$web_prefix . '/core'];
+                unset($options['extra']['installer-paths'][$web_prefix . '/core']);
             }
 
             $file->write($options);
