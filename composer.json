@@ -20,11 +20,17 @@
     },
     "require-dev": {
         "composer/composer": "~1.0",
+        "phpunit/phpunit": "^5.7",
         "squizlabs/php_codesniffer": "~2.3"
     },
     "autoload": {
         "psr-4": {
             "Hussainweb\\DrupalComposerInit\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hussainweb\\DrupalComposerInit\\": "tests/"
         }
     },
     "config": {
@@ -40,7 +46,8 @@
     "scripts": {
         "test": [
             "composer validate --no-interaction",
-            "phpcs --standard=psr2 src/"
+            "phpcs --standard=psr2 src/ tests/",
+            "phpunit tests/"
         ]
     }
 }
