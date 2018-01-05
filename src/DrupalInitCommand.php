@@ -140,6 +140,9 @@ EOT
             $options['config'] = [
                 'sort-packages' => true,
                 'optimize-autoloader' => true,
+                'apcu-autoloader' => true,
+                'secure-http' => false,
+                'discard-changes' => true,
             ];
 
             if ($this->isDrupal7($input)) {
